@@ -1,6 +1,6 @@
 ## Introduction
 
-### Ajisai, the Hydrangea macrophylla
+### Ajisai, the Hydrangea Macrophylla
 
 ## Manual
 
