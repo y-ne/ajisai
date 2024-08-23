@@ -1,3 +1,6 @@
+mod database;
+
+use database::db_pool;
 use dotenvy::dotenv;
 use std::env;
 use axum::{
@@ -9,19 +12,14 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use sqlx::postgres::{PgPoolOptions, PgPool};
+use sqlx::postgres::PgPool;
 use sqlx::Row;
 
 #[tokio::main]
 async fn main() {
     dotenv().expect(".env not found");
 
-    let pg_url = env::var("DATABASE_URL").expect("DATABASE_URL must be SET");
-
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&pg_url).await
-        .expect("failed to create database pool");
+    let pool = db_pool().await.expect("failed to crate pool");
 
     let app = Router::new()
         .route("/", get(root))
