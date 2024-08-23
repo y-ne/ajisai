@@ -16,7 +16,7 @@ use sqlx::Row;
 async fn main() {
     dotenv().expect(".env not found");
 
-    let pg_url = env::var("DATABASE_URL"). expect("DATABASE_URL must be SET");
+    let pg_url = env::var("DATABASE_URL").expect("DATABASE_URL must be SET");
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
