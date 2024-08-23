@@ -1,6 +1,19 @@
 use sqlx::PgPool;
 use crate::models::user::User;
 
+pub async fn read_users(pool: &PgPool) -> Result<Vec<User>, sqlx::Error> {
+    let users = sqlx::query_as!(
+        User,
+        r#"
+        SELECT id, username, password, status
+        FROM users
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(users)
+}
+
 pub async fn create_user(
     pool: &PgPool,
     username: &str,

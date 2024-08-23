@@ -1,7 +1,9 @@
 use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
-use crate::services::user_service::create_user;
 use sqlx::PgPool;
+
+use crate::services::user_service::{read_users ,create_user};
+use crate::models::user::User;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateUserRequest {
@@ -16,6 +18,15 @@ pub struct UserResponse {
     username: String,
     password: String,
     status: Option<bool>,
+}
+
+pub async fn read_users_handler(
+    State(pool): State<PgPool>,
+) -> Result<Json<Vec<User>>, (StatusCode, String)> {
+    match read_users(&pool).await {
+        Ok(users) => Ok(Json(users)),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+    }
 }
 
 pub async fn create_user_handler(

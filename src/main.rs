@@ -4,7 +4,7 @@ mod services;
 mod handlers;
 
 use database::db_pool;
-use crate::handlers::user_handler::create_user_handler;
+use crate::handlers::user_handler::{read_users_handler ,create_user_handler};
 use dotenvy::dotenv;
 
 use axum::{
@@ -22,6 +22,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(root))
+        .route("/user", get(read_users_handler))
         .route("/user", post(create_user_handler))
         .with_state(pool);
 
