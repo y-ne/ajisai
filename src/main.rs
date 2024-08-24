@@ -3,10 +3,9 @@ mod handlers;
 mod models;
 mod services;
 
-use crate::handlers::user_handler::{create_user_handler, read_users_handler};
+use crate::handlers::user_handler::{create_user_handler, read_users_handler, update_user_handler};
 use database::db_pool;
 use dotenvy::dotenv;
-use handlers::user_handler::update_user_handler;
 
 use axum::{
     routing::{get, post, put},
