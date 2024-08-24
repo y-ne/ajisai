@@ -1,9 +1,13 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
+};
 // use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::models::user::{User, UserRequest};
-use crate::services::user_service::{create_user, read_users};
+use crate::models::user::{User, UserRequest, UserUpdateRequest};
+use crate::services::user_service::{create_user, read_users, update_user};
 
 pub async fn read_users_handler(
     State(pool): State<PgPool>,
@@ -28,5 +32,24 @@ pub async fn create_user_handler(
             updated_at: user.updated_at,
         })),
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+    }
+}
+
+pub async fn update_user_handler(
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
+    Json(payload): Json<UserUpdateRequest>,
+) -> Result<Json<User>, (StatusCode, String)> {
+    match update_user(
+        &pool,
+        id,
+        &payload.username,
+        &payload.password,
+        payload.status,
+    )
+    .await
+    {
+        Ok(user) => Ok(Json(user)),
+        Err(e) => Err((StatusCode::NOT_MODIFIED, e.to_string())),
     }
 }

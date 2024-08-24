@@ -15,3 +15,10 @@ pub struct UserRequest {
     pub username: String,
     pub password: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserUpdateRequest {
+    pub username: String,
+    pub password: String,
+    pub status: Option<bool>,
+}
