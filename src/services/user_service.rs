@@ -14,6 +14,22 @@ pub async fn read_users(pool: &PgPool) -> Result<Vec<User>, sqlx::Error> {
     Ok(users)
 }
 
+pub async fn read_user_by_id(pool: &PgPool, id: i32) -> Result<User, sqlx::Error> {
+    let user = sqlx::query_as!(
+        User,
+        r#"
+        SELECT id, username, password, status, created_at, updated_at
+        FROM users
+        WHERE id = $1
+        "#,
+        id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(user)
+}
+
 pub async fn create_user(
     pool: &PgPool,
     username: &str,
@@ -58,4 +74,18 @@ pub async fn update_user(
     .fetch_one(pool)
     .await?;
     Ok(user)
+}
+
+pub async fn delete_user(pool: &PgPool, id: i32) -> Result<bool, sqlx::Error> {
+    let row = sqlx::query!(
+        r#"
+        DELETE FROM users
+        WHERE id = $1
+        "#,
+        id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(row.rows_affected() > 0)
 }

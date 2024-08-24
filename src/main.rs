@@ -3,12 +3,15 @@ mod handlers;
 mod models;
 mod services;
 
-use crate::handlers::user_handler::{create_user_handler, read_users_handler, update_user_handler};
+use crate::handlers::user_handler::{
+    create_user_handler, delete_user_handler, read_user_by_id_handler, read_users_handler,
+    update_user_handler,
+};
 use database::db_pool;
 use dotenvy::dotenv;
 
 use axum::{
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Json, Router,
 };
 use serde_json::{json, Value};
@@ -24,6 +27,8 @@ async fn main() {
         .route("/user", get(read_users_handler))
         .route("/user", post(create_user_handler))
         .route("/user/:id", put(update_user_handler))
+        .route("/user/:id", get(read_user_by_id_handler))
+        .route("/user/:id", delete(delete_user_handler))
         .with_state(pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
