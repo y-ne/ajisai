@@ -1,6 +1,6 @@
 use passwords::PasswordGenerator;
 
-pub async fn generate_password(count: i32) -> Vec<String> {
+pub async fn generate_password(count: usize) -> Vec<String> {
     let pg = PasswordGenerator {
         length: 12,
         numbers: true,

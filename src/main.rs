@@ -2,6 +2,7 @@ mod database;
 mod handlers;
 mod models;
 mod services;
+mod utils;
 
 use crate::handlers::user_handler::{
     create_user_handler, delete_user_handler, read_user_by_id_handler, read_users_handler,
