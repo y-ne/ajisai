@@ -1,4 +1,5 @@
 use crate::models::user::{User, UserRole, UserStatus};
+use bcrypt::hash;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -33,7 +34,10 @@ pub async fn create_user(
     username: &str,
     password: &str,
     role: UserRole,
+    bcrypt_cost: u32,
 ) -> Result<User, sqlx::Error> {
+    let hashed_password = hash(password, bcrypt_cost).expect("Failed to hash password");
+
     sqlx::query_as!(
         User,
         r#"
@@ -42,7 +46,7 @@ pub async fn create_user(
         RETURNING id, username, password, status as "status: UserStatus", role as "role: UserRole", created_at, updated_at
         "#,
         username,
-        password,
+        hashed_password,
         role as UserRole,
         UserStatus::Pending as UserStatus
     )
@@ -57,7 +61,14 @@ pub async fn update_user(
     password: Option<&str>,
     status: Option<UserStatus>,
     role: Option<UserRole>,
+    bcrypt_cost: u32,
 ) -> Result<User, sqlx::Error> {
+    let hashed_password = if let Some(new_password) = password {
+        Some(hash(new_password, bcrypt_cost).expect("Failed to hash password"))
+    } else {
+        None
+    };
+
     sqlx::query_as!(
         User,
         r#"
@@ -73,7 +84,7 @@ pub async fn update_user(
         "#,
         id,
         username,
-        password,
+        hashed_password,
         status as Option<UserStatus>,
         role as Option<UserRole>
     )

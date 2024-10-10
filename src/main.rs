@@ -32,6 +32,11 @@ async fn main() {
 
     let pool = db_pool().await.expect("Failed to create pool");
 
+    let bcrypt_cost = std::env::var("BCRYPT_COST")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(12);
+
     let cors = CorsLayer::new().allow_origin(Any);
 
     let app = Router::new()
@@ -41,7 +46,7 @@ async fn main() {
         .route("/users/:id", put(update_user_handler))
         .route("/users/:id", delete(delete_user_handler))
         .layer(cors)
-        .with_state(pool);
+        .with_state((pool, bcrypt_cost));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::info!("listening on {}", addr);

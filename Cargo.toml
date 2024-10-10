@@ -16,3 +16,4 @@ uuid = { version = "1.10.0", features = ["v4", "fast-rng", "macro-diagnostics", 
 tower-http = { version = "0.6.0", features = ["cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+bcrypt = "0.15"
