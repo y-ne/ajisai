@@ -13,30 +13,39 @@ use dotenvy::dotenv;
 
 use axum::{
     routing::{delete, get, post, put},
-    Json, Router,
+    Router,
 };
-use serde_json::{json, Value};
+use std::net::SocketAddr;
+use tower_http::cors::{Any, CorsLayer};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() {
-    dotenv().expect(".env not found");
+    dotenv().ok();
 
-    let pool = db_pool().await.expect("failed to crate pool");
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    let pool = db_pool().await.expect("Failed to create pool");
+
+    let cors = CorsLayer::new().allow_origin(Any);
 
     let app = Router::new()
-        .route("/", get(root))
-        .route("/user", get(read_users_handler))
-        .route("/user", post(create_user_handler))
-        .route("/user/:id", put(update_user_handler))
-        .route("/user/:id", get(read_user_by_id_handler))
-        .route("/user/:id", delete(delete_user_handler))
+        .route("/users", get(read_users_handler))
+        .route("/users", post(create_user_handler))
+        .route("/users/:id", get(read_user_by_id_handler))
+        .route("/users/:id", put(update_user_handler))
+        .route("/users/:id", delete(delete_user_handler))
+        .layer(cors)
         .with_state(pool);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-
-    axum::serve(listener, app).await.unwrap();
-}
-
-async fn root() -> Json<Value> {
-    Json(json!({"data": "hello mom"}))
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    tracing::info!("listening on {}", addr);
+    axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
+        .await
+        .unwrap();
 }

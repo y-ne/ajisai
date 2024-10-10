@@ -7,6 +7,10 @@
 ## Manual
 
 ```bash
+cargo install sqlx-cli
+```
+
+```bash
 cp .env.example .env
 ```
 

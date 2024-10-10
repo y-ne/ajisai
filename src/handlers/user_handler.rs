@@ -1,80 +1,82 @@
+use crate::models::user::{CreateUserRequest, UpdateUserRequest, User};
+use crate::services::user_service;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     Json,
 };
-// use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-
-use crate::services::user_service::{create_user, read_user_by_id, read_users, update_user};
-use crate::{
-    models::user::{User, UserRequest, UserUpdateRequest},
-    services::user_service::delete_user,
-};
+use uuid::Uuid;
 
 pub async fn read_users_handler(
     State(pool): State<PgPool>,
 ) -> Result<Json<Vec<User>>, (StatusCode, String)> {
-    match read_users(&pool).await {
-        Ok(users) => Ok(Json(users)),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+    let users = user_service::read_users(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(users))
 }
 
 pub async fn read_user_by_id_handler(
     State(pool): State<PgPool>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<User>, (StatusCode, String)> {
-    match read_user_by_id(&pool, id).await {
-        Ok(user) => Ok(Json(user)),
-        Err(sqlx::Error::RowNotFound) => Err((StatusCode::NOT_FOUND, "User not found".to_string())),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+    let user = user_service::read_user_by_id(&pool, id)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "User not found".to_string()),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        })?;
+    Ok(Json(user))
 }
 
 pub async fn create_user_handler(
     State(pool): State<PgPool>,
-    Json(payload): Json<UserRequest>,
+    Json(payload): Json<CreateUserRequest>,
 ) -> Result<Json<User>, (StatusCode, String)> {
-    match create_user(&pool, &payload.username, &payload.password).await {
-        Ok(user) => Ok(Json(User {
-            id: user.id,
-            username: user.username,
-            password: user.password,
-            status: user.status,
-            created_at: user.created_at,
-            updated_at: user.updated_at,
-        })),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+    let user = user_service::create_user(
+        &pool,
+        &payload.username,
+        &payload.password,
+        payload.role.unwrap_or_default(),
+    )
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(user))
 }
 
 pub async fn update_user_handler(
     State(pool): State<PgPool>,
-    Path(id): Path<i32>,
-    Json(payload): Json<UserUpdateRequest>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<UpdateUserRequest>,
 ) -> Result<Json<User>, (StatusCode, String)> {
-    match update_user(
+    let user = user_service::update_user(
         &pool,
         id,
-        &payload.username,
-        &payload.password,
+        payload.username.as_deref(),
+        payload.password.as_deref(),
         payload.status,
+        payload.role,
     )
     .await
-    {
-        Ok(user) => Ok(Json(user)),
-        Err(e) => Err((StatusCode::NOT_MODIFIED, e.to_string())),
-    }
+    .map_err(|e| match e {
+        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "User not found".to_string()),
+        _ => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+    })?;
+    Ok(Json(user))
 }
 
 pub async fn delete_user_handler(
     State(pool): State<PgPool>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    match delete_user(&pool, id).await {
-        Ok(true) => Ok(StatusCode::NO_CONTENT),
-        Ok(false) => Err((StatusCode::NOT_FOUND, "User not found.".to_string())),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+    let deleted = user_service::delete_user(&pool, id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if deleted {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err((StatusCode::NOT_FOUND, "User not found".to_string()))
     }
 }
