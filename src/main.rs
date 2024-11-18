@@ -1,56 +1,59 @@
-mod database;
-mod handlers;
-mod models;
-mod services;
-mod utils;
-
-use crate::handlers::user_handler::{
-    create_user_handler, delete_user_handler, read_user_by_id_handler, read_users_handler,
-    update_user_handler,
-};
-use database::db_pool;
-use dotenvy::dotenv;
-
+use anyhow::Result;
 use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use std::net::SocketAddr;
-use tower_http::cors::{Any, CorsLayer};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use std::net::SocketAddr;  // Add this import
+use tower_http::cors::CorsLayer;
+use tracing::info;
+
+mod database;
+mod handlers;
+mod models;
+mod services;
+
+use handlers::user_handler::{create_user, delete_user, read_user_by_id, read_users, update_user};
+use services::user_service::UserService;
 
 #[tokio::main]
-async fn main() {
-    dotenv().ok();
+async fn main() -> Result<()> {
+    // Load environment variables
+    dotenvy::dotenv().ok();
 
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
-        ))
-        .with(tracing_subscriber::fmt::layer())
+    // Initialize logging
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    let pool = db_pool().await.expect("Failed to create pool");
+    // Create database pool
+    let pool = database::create_pool().await?;
 
+    // Create user service
     let bcrypt_cost = std::env::var("BCRYPT_COST")
         .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(12);
+    
+    let user_service = UserService::new(pool, bcrypt_cost);
 
-    let cors = CorsLayer::new().allow_origin(Any);
-
+    // Build router
     let app = Router::new()
-        .route("/users", get(read_users_handler))
-        .route("/users", post(create_user_handler))
-        .route("/users/:id", get(read_user_by_id_handler))
-        .route("/users/:id", put(update_user_handler))
-        .route("/users/:id", delete(delete_user_handler))
-        .layer(cors)
-        .with_state((pool, bcrypt_cost));
+        .route("/users", get(read_users))
+        .route("/users", post(create_user))
+        .route("/users/:id", get(read_user_by_id))
+        .route("/users/:id", put(update_user))
+        .route("/users/:id", delete(delete_user))
+        .layer(CorsLayer::permissive())
+        .with_state(user_service);
 
+    // Start server
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::info!("listening on {}", addr);
-    axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
-        .await
-        .unwrap();
+    info!("🚀 Server starting on {addr}");
+    
+    axum::serve(
+        tokio::net::TcpListener::bind(addr).await?,
+        app
+    ).await?;
+
+    Ok(())
 }
