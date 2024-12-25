@@ -21,5 +21,11 @@ sqlx migrate run
 ```
 
 ```bash
+cargo sqlx prepare
+
+cargo clean
+
+cargo build
+
 cargo run 
 ```

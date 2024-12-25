@@ -1,4 +1,8 @@
+# JetBrains Things
+.idea
+
 /target
+.sqlx
 .zed
 .env
 Cargo.lock
