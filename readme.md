@@ -27,5 +27,11 @@ cargo clean
 
 cargo build
 
-cargo run 
+cargo run
+```
+
+```bash
+docker build -t ajisai .
+
+docker run -p 3000:3000 ajisai
 ```
