@@ -1,0 +1,9 @@
+services:
+    ajisai:
+        image: ghcr.io/y-ne/ajisai:latest
+        networks:
+            - frontend
+
+networks:
+    frontend:
+        external: true
