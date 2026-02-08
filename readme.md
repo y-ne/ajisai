@@ -1,40 +1,30 @@
-## Introduction
-
-### Ajisai, the Hydrangea Macrophylla
+## Ajisai, the Hydrangea Macrophylla
 
 `axum` `sqlx` `postgresql`
 
-## Manual
-
-```bash
-cargo install sqlx-cli
-```
+### Setup
 
 ```bash
 cp .env.example .env
 ```
 
+### Database
+
 ```bash
 sqlx database create
-
-sqlx migrate info
-
 sqlx migrate run
 ```
 
+### Development
+
 ```bash
-cargo sqlx prepare
-
-cargo clean
-
-cargo build
-
 cargo run
 ```
 
-```bash
-# MacOS need to specify the --platform
-docker build --platform linux/amd64 -t ajisai .
+### Build
 
-docker run -p 3000:3000 ajisai
+```bash
+cargo sqlx prepare
+docker build --platform linux/amd64 -t ghcr.io/y-ne/ajisai:latest .
+docker push ghcr.io/y-ne/ajisai:latest
 ```
