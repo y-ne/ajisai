@@ -2,6 +2,8 @@ services:
     ajisai:
         image: ghcr.io/y-ne/ajisai:latest
         container_name: ajisai
+        env_file:
+            - .env
         networks:
             - frontend
 
