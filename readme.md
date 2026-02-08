@@ -17,6 +17,8 @@ cp .env.example .env
 ```bash
 sqlx database create
 
+sqlx migrate info
+
 sqlx migrate run
 ```
 
@@ -31,7 +33,8 @@ cargo run
 ```
 
 ```bash
-docker build -t ajisai .
+# MacOS need to specify the --platform
+docker build --platform linux/amd64 -t ajisai .
 
 docker run -p 3000:3000 ajisai
 ```

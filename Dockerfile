@@ -5,6 +5,8 @@ RUN apk add --no-cache musl-dev
 
 WORKDIR /app
 COPY . .
+
+ENV SQLX_OFFLINE=true
 RUN cargo build --release
 
 # Runtime
