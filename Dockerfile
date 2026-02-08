@@ -1,16 +1,16 @@
 # Builder
-FROM rust:1.93-bookworm AS builder
+FROM rust:1.93-alpine3.23 AS builder
+
+RUN apk add --no-cache musl-dev
 
 WORKDIR /app
-
 COPY . .
-
 RUN cargo build --release
 
 # Runtime
-FROM debian:bookworm-slim
+FROM alpine:3.23
 
-RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/target/release/ajisai /usr/local/bin/
 
